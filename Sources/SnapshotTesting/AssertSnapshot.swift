@@ -303,6 +303,24 @@ public func verifySnapshot<Value, Format>(
         .appendingPathComponent("__Snapshots__")
         .appendingPathComponent(fileName)
 
+      if(ProcessInfo.processInfo.environment.keys.contains("SNAPSHOT_DIRECTORY_URL")){
+        let envURL = ProcessInfo.processInfo.environment["SNAPSHOT_DIRECTORY_URL"]
+        if(envURL != nil && envURL!.count > 0){
+          if(envURL!.contains("http://")){
+            
+            let subPath = fileUrl
+              .deletingLastPathComponent()
+              .appendingPathComponent(fileName)
+            
+            snapshotDirectoryUrl = URL(string: envURL!)!
+            snapshotDirectoryUrl = snapshotDirectoryUrl
+              .appendingPathComponent(
+                String(subPath.path.components(separatedBy: "UITests").last!)
+              )
+          }
+        }
+      }
+
       let identifier: String
       if let name = name {
         identifier = sanitizePathComponent(name)
@@ -321,7 +339,7 @@ public func verifySnapshot<Value, Format>(
         .appendingPathComponent("\(testName).\(identifier)")
         .appendingPathExtension(snapshotting.pathExtension ?? "")
       let fileManager = FileManager.default
-      try fileManager.createDirectory(at: snapshotDirectoryUrl, withIntermediateDirectories: true)
+      try fileManager.createDirectory(atURL: snapshotDirectoryUrl, withIntermediateDirectories: true)
 
       let tookSnapshot = XCTestExpectation(description: "Took snapshot")
       var optionalDiffable: Format?
@@ -353,7 +371,7 @@ public func verifySnapshot<Value, Format>(
       }
 
       func recordSnapshot() throws {
-        try snapshotting.diffing.toData(diffable).write(to: snapshotFileUrl)
+        try snapshotting.diffing.toData(diffable).write(atURL: snapshotFileUrl)
         #if !os(Linux) && !os(Windows)
           if !isSwiftTesting,
             ProcessInfo.processInfo.environment.keys.contains("__XCODE_BUILT_PRODUCTS_DIR_PATHS")
@@ -369,7 +387,7 @@ public func verifySnapshot<Value, Format>(
       guard
         record != .all,
         (record != .missing && record != .failed)
-          || fileManager.fileExists(atPath: snapshotFileUrl.path)
+          || fileManager.fileExists(atURL: snapshotFileUrl)
       else {
         try recordSnapshot()
 
@@ -412,10 +430,10 @@ public func verifySnapshot<Value, Format>(
           ?? NSTemporaryDirectory(), isDirectory: true
       )
       let artifactsSubUrl = artifactsUrl.appendingPathComponent(fileName)
-      try fileManager.createDirectory(at: artifactsSubUrl, withIntermediateDirectories: true)
+      try fileManager.createDirectory(atURL: artifactsSubUrl, withIntermediateDirectories: true)
       let failedSnapshotFileUrl = artifactsSubUrl.appendingPathComponent(
         snapshotFileUrl.lastPathComponent)
-      try snapshotting.diffing.toData(diffable).write(to: failedSnapshotFileUrl)
+      try snapshotting.diffing.toData(diffable).write(toURL: failedSnapshotFileUrl)
 
       if !attachments.isEmpty {
         #if !os(Linux) && !os(Windows)
