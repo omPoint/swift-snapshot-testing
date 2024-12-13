@@ -433,7 +433,7 @@ public func verifySnapshot<Value, Format>(
       try fileManager.createDirectory(atURL: artifactsSubUrl, withIntermediateDirectories: true)
       let failedSnapshotFileUrl = artifactsSubUrl.appendingPathComponent(
         snapshotFileUrl.lastPathComponent)
-      try snapshotting.diffing.toData(diffable).write(toURL: failedSnapshotFileUrl)
+      try snapshotting.diffing.toData(diffable).write(atURL: failedSnapshotFileUrl)
 
       if !attachments.isEmpty {
         #if !os(Linux) && !os(Windows)
